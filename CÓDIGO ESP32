@@ -66,7 +66,7 @@ void setup() {
     pixels.begin();
     pixels.clear();
     pixels.setBrightness(255);
-    neoColor(141, 0, 200); //Morado cuando está iniciando
+    neoColor(0, 255, 0); //Verde cuando está iniciando
 
     //Debug
     Serial.println("LM75 encontrado en 0x48");
@@ -74,20 +74,6 @@ void setup() {
 }
 
 void loop() {
-  //Debug
-  /*float temp = leerLM75();
-
-  if (temp > -500) {
-    Serial.print("Temperatura: ");
-    Serial.print(temp, 2);
-    Serial.println(" °C");
-  } 
-  else {
-    Serial.println("Error leyendo LM75");
-  }
-
-  delay(500);*/
-
   //Verificar comunicación serial y comando
   if(Serial2.available()){
     char lectura = Serial2.read();
@@ -95,8 +81,14 @@ void loop() {
     Serial.println(lectura); 
     if(lectura=='R'){
 
-      neoColor(26, 209, 222); //Turquesa al medir
+      neoColor(0, 255, 255); //Turquesa al medir
+      delay(350);
       float temp2 = leerLM75();
+
+      if(temp2<0||temp2>30){
+        neoColor(255,0,0);
+        delay(350);
+      }
 
       Serial2.flush(); //Limpieza por si quedan bytes basura
 
@@ -106,12 +98,15 @@ void loop() {
       Serial.print("Temperatura: ");
       Serial.print(temp2, 2);
       Serial.println(" °C");
-      neoColor(22, 17, 154); //Rosado al enviar el dato
+      neoColor(141, 0, 200); //Morado al enviar el dato
       
       }
       else{
         Serial.println("Error leyendo temperatura");
         neoColor(255,0,0); //Rojo si hay error en la lectura
       }
+      delay(350);
+      neoColor(0,255,0); //Verde para indicar que esta listo de nuevo
     }
 }
+
