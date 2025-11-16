@@ -79,18 +79,22 @@ void loop() {
     char lectura = Serial2.read();
     Serial.print("Recibí: ");
     Serial.println(lectura); 
+
+    if (lectura == 'S') {
+        neoColor(255,255,0);
+        delay(350);
+      }
+
     if(lectura=='R'){
 
       neoColor(0, 255, 255); //Turquesa al medir
       delay(350);
       float temp2 = leerLM75();
 
-      if(temp2<0||temp2>30){
+      if(temp2<=0||temp2>30){
         neoColor(255,0,0);
         delay(350);
       }
-
-      Serial2.flush(); //Limpieza por si quedan bytes basura
 
       //Conversión de float a bytes para enviar al STM32
       uint8_t*dato=(uint8_t*)&temp2;
@@ -100,13 +104,8 @@ void loop() {
       Serial.println(" °C");
       neoColor(141, 0, 200); //Morado al enviar el dato
       
-      }
-      else{
-        Serial.println("Error leyendo temperatura");
-        neoColor(255,0,0); //Rojo si hay error en la lectura
-      }
-      delay(350);
-      neoColor(0,255,0); //Verde para indicar que esta listo de nuevo
+    }
+    delay(350);
+    neoColor(0,255,0); //Verde para indicar que esta listo de nuevo
     }
 }
-
