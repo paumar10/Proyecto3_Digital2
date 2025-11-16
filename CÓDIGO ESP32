@@ -1,0 +1,117 @@
+//Universidad del Valle de Guatemala
+//BE3029 - Electrónica Digital 2
+// Fátima Camposeco-23122
+// Paulina Martinez- 23143                               
+// Proyecto 3 
+//MCU: ESP32 dev kit 1.0
+//Librerías
+#include <Arduino.h>
+#include <Wire.h>
+#include <Adafruit_NeoPixel.h>
+
+//Dirección del sensor I2C
+#define LM75_ADDR 0x48
+
+//Definición neopixel 
+#define PIN_NEOPIXEL 18
+#define NUMPIXELS 1
+
+Adafruit_NeoPixel pixels(NUMPIXELS, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
+
+//Lectura y devolución de valores del sensor
+float leerLM75() {
+  //Se le indica al LM75 lo que se quiere leer
+    Wire.beginTransmission(LM75_ADDR);
+    Wire.write(0x00);
+    Wire.endTransmission(false);
+
+    //Se indica que se leen 2 bytes
+    Wire.requestFrom(LM75_ADDR, 2);
+
+    //Se verifica que hayan llegado los 2 bytes
+    if (Wire.available() < 2) {
+        return -1000; 
+    }
+    
+    //Lectura de los 2 bytes 
+    uint8_t b1 = Wire.read();
+    uint8_t b2 = Wire.read();
+
+    //Conversión de la lectura de 2 bytes 
+    int16_t raw = b1; //lectura del byte más alto
+    raw = raw * 256;  //acomodar lectura, que llega en 8 bits
+    raw = raw + b2;  //agregar el otro byte
+    raw = raw / 128;  //acomodar la lectura, se usaron 2 bits antes y se usan 9 para la temperatura
+
+    //Conversión a °C
+    float tempC = raw * 0.5;//Cada bit tiene resolución de 0.5
+    return tempC;
+}
+
+//Función del neopixel
+    void neoColor(uint8_t r, uint8_t g, uint8_t b) {
+      pixels.setPixelColor(0, pixels.Color(r, g, b));
+      pixels.show();
+}
+
+void setup() {
+    Serial.begin(115200);
+    //Comunicación serial con STM32
+    Serial2.begin(115200, SERIAL_8N1, 16, 17);
+
+    //Inicialización del I2C
+    Wire.begin(21, 22); 
+
+    //Inicialización del neopixel
+    pixels.begin();
+    pixels.clear();
+    pixels.setBrightness(255);
+    neoColor(141, 0, 200); //Morado cuando está iniciando
+
+    //Debug
+    Serial.println("LM75 encontrado en 0x48");
+    Serial.println("Leyendo temperatura...\n");
+}
+
+void loop() {
+  //Debug
+  /*float temp = leerLM75();
+
+  if (temp > -500) {
+    Serial.print("Temperatura: ");
+    Serial.print(temp, 2);
+    Serial.println(" °C");
+  } 
+  else {
+    Serial.println("Error leyendo LM75");
+  }
+
+  delay(500);*/
+
+  //Verificar comunicación serial y comando
+  if(Serial2.available()){
+    char lectura = Serial2.read();
+    Serial.print("Recibí: ");
+    Serial.println(lectura); 
+    if(lectura=='R'){
+
+      neoColor(26, 209, 222); //Turquesa al medir
+      float temp2 = leerLM75();
+
+      Serial2.flush(); //Limpieza por si quedan bytes basura
+
+      //Conversión de float a bytes para enviar al STM32
+      uint8_t*dato=(uint8_t*)&temp2;
+      Serial2.write(dato,sizeof(temp2));
+      Serial.print("Temperatura: ");
+      Serial.print(temp2, 2);
+      Serial.println(" °C");
+      neoColor(22, 17, 154); //Rosado al enviar el dato
+      
+      }
+      else{
+        Serial.println("Error leyendo temperatura");
+        neoColor(255,0,0); //Rojo si hay error en la lectura
+      }
+    }
+}
